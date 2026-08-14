@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Invest For Your Customer — On-behalf Investment Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1811;
+    --bg-2:#0e1f16;
+    --panel:#122a1e;
+    --panel-2:#16321f;
+    --line:rgba(201,165,78,.20);
+    --line-soft:rgba(201,165,78,.10);
+    --brass:#c9a54e;
+    --brass-hi:#e0c274;
+    --parchment:#ece3cf;
+    --muted:#93a493;
+    --muted-2:#6f8172;
+    --danger:#d98a5c;
+    --ok:#7fb08a;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(201,165,78,.06), transparent 60%),
+      var(--bg);
+    color:var(--parchment);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:15px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    text-align:center;
+  }
+  a{color:var(--brass);}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+
+  /* Header */
+  header{
+    border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:20;
+    background:rgba(11,24,17,.82);backdrop-filter:blur(10px);
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;height:66px;}
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{
+    font-family:'Spectral',serif;font-weight:600;letter-spacing:.02em;
+    font-size:20px;color:var(--parchment);
+  }
+  .brand .mark b{color:var(--brass);font-weight:600;}
+  .brand .tag{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted-2);}
+  .net{
+    display:none;align-items:center;gap:7px;font-size:12px;color:var(--muted);
+    margin-right:6px;
+  }
+  .net .dot{width:7px;height:7px;border-radius:50%;background:var(--muted-2);}
+  .net.ok .dot{background:var(--ok);}
+  .net.bad .dot{background:var(--danger);}
+  .net.bad{color:var(--danger);}
+
+  button{font-family:inherit;cursor:pointer;}
+  .btn{
+    background:transparent;border:1px solid var(--brass);color:var(--brass);
+    padding:9px 18px;border-radius:var(--radius);font-size:13px;letter-spacing:.04em;
+    text-transform:uppercase;transition:.18s;font-weight:500;
+  }
+  .btn:hover{background:var(--brass);color:#101d13;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.solid{background:var(--brass);color:#101d13;}
+  .btn.solid:hover{background:var(--brass-hi);border-color:var(--brass-hi);}
+  .btn.ghost{border-color:var(--line);color:var(--parchment);}
+  .btn.ghost:hover{background:var(--panel-2);color:var(--parchment);}
+  .btn.sm{padding:6px 13px;font-size:11px;}
+
+  /* Hero */
+  .hero{padding:72px 0 40px;border-bottom:1px solid var(--line-soft);text-align:center;}
+  .eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);margin-bottom:22px;}
+  h1{
+    font-family:'Spectral',serif;font-weight:300;
+    font-size:clamp(34px,6vw,60px);line-height:1.04;letter-spacing:-.01em;
+    margin:0 auto 20px;max-width:18ch;
+  }
+  h1 em{font-style:italic;color:var(--brass);}
+  .lede{font-size:17px;color:var(--muted);max-width:56ch;margin:0 auto;font-weight:300;}
+  .lede b{color:var(--parchment);font-weight:500;}
+
+  /* Ledger stats */
+  .ledger{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    border:1px solid var(--line);margin:40px 0 8px;background:var(--bg-2);
+  }
+  .ledger .cell{padding:22px 24px;border-right:1px solid var(--line-soft);}
+  .ledger .cell:last-child{border-right:none;}
+  .ledger .k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2);}
+  .ledger .v{font-family:'IBM Plex Mono',monospace;font-size:26px;color:var(--parchment);margin-top:8px;}
+  .ledger .v small{font-size:13px;color:var(--muted);}
+
+  /* Sections */
+  section{padding:56px 0;border-bottom:1px solid var(--line-soft);}
+  .sec-head{display:flex;align-items:baseline;justify-content:center;gap:16px;margin-bottom:28px;}
+  .sec-head .num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--brass);padding-top:5px;}
+  .sec-head h2{font-family:'Spectral',serif;font-weight:400;font-size:28px;margin:0;}
+  .sec-head p{margin:4px 0 0;color:var(--muted);font-size:14px;}
+
+  /* Deed panel */
+  .deed{
+    border:1px solid var(--brass);position:relative;background:
+      linear-gradient(180deg, rgba(201,165,78,.03), transparent 30%), var(--panel);
+    padding:34px;
+  }
+  .deed::before{content:"";position:absolute;inset:6px;border:1px solid var(--line-soft);pointer-events:none;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+  label.f{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+  input[type=text],input[type=number]{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--parchment);
+    padding:13px 14px;border-radius:var(--radius);font-family:'IBM Plex Mono',monospace;font-size:14px;
+    outline:none;transition:.15s;
+  }
+  input:focus{border-color:var(--brass);}
+  .hint{font-size:12px;color:var(--muted-2);margin-top:7px;}
+  .field{margin-bottom:22px;}
+
+  /* Plans */
+  .plans{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:4px;}
+  .plan{
+    border:1px solid var(--line);background:var(--bg);padding:14px 22px;border-radius:var(--radius);
+    cursor:pointer;transition:.15s;text-align:center;min-width:160px;
+  }
+  .plan:hover{border-color:var(--brass);}
+  .plan.on{border-color:var(--brass);background:linear-gradient(180deg,rgba(201,165,78,.10),transparent);}
+  .plan .pid{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-2);}
+  .plan .sub{font-size:20px;line-height:1.15;color:var(--brass);margin:8px 0 2px;}
+
+  .actions{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:28px;flex-wrap:wrap;}
+
+  .preview{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);margin:24px 0 4px;background:var(--bg-2);}
+  .preview .pv{padding:16px 18px;border-right:1px solid var(--line-soft);}
+  .preview .pv:last-child{border-right:none;}
+  .preview .pvk{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);}
+  .preview .pvv{font-family:'IBM Plex Mono',monospace;font-size:19px;color:var(--brass);margin-top:7px;}
+  .preview .pvv.dim{color:var(--muted-2);font-size:13px;}
+  .status{font-size:13px;color:var(--muted);min-height:20px;font-family:'IBM Plex Mono',monospace;}
+  .status.err{color:var(--danger);}
+  .status.ok{color:var(--ok);}
+
+  /* Position cards */
+  .lookup{display:flex;gap:10px;margin-bottom:26px;flex-wrap:wrap;justify-content:center;}
+  .lookup input{flex:1;min-width:240px;}
+  .cards{display:grid;gap:14px;}
+  .card{
+    border:1px solid var(--line);background:var(--panel);padding:22px;border-radius:var(--radius);
+    display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;
+  }
+  .card .rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 30px;}
+  .row .rk{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);}
+  .row{min-width:0;}
+  .row .rv{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--parchment);margin-top:3px;overflow-wrap:anywhere;}
+  .card .side{display:flex;flex-direction:column;gap:10px;align-items:center;min-width:150px;}
+  .pill{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--line);border-radius:99px;color:var(--muted);}
+  .pill.live{border-color:var(--ok);color:var(--ok);}
+  .pill.wait{border-color:var(--brass);color:var(--brass);}
+  .pill.done{border-color:var(--muted-2);color:var(--muted-2);}
+  .prog{height:5px;background:var(--bg);border:1px solid var(--line-soft);width:150px;border-radius:99px;overflow:hidden;}
+  .prog i{display:block;height:100%;background:var(--brass);}
+  .prog-label{font-size:11px;color:var(--muted-2);text-align:center;}
+
+  .empty{border:1px dashed var(--line);padding:34px;text-align:center;color:var(--muted);border-radius:var(--radius);font-size:14px;}
+  .foot{padding:40px 0 60px;color:var(--muted-2);font-size:12px;line-height:1.7;}
+  .foot code{color:var(--brass);font-family:'IBM Plex Mono',monospace;word-break:break-all;}
+
+  .fade{opacity:0;transform:translateY(10px);animation:rise .7s ease forwards;}
+  @keyframes rise{to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion:reduce){.fade{animation:none;opacity:1;transform:none;}}
+
+  @media(max-width:780px){
+    .wrap{padding:0 18px;}
+    .hero{padding:48px 0 32px;}
+    section{padding:44px 0;}
+    .grid2{grid-template-columns:1fr;gap:0;}
+    .ledger{grid-template-columns:1fr;margin:32px 0 8px;}
+    .ledger .cell{border-right:none;border-bottom:1px solid var(--line-soft);}
+    .ledger .cell:last-child{border-bottom:none;}
+    .deed{padding:24px 20px;}
+    .plans{grid-template-columns:repeat(2,1fr);}
+    .preview{grid-template-columns:1fr;}
+    .preview .pv{border-right:none;border-bottom:1px solid var(--line-soft);}
+    .preview .pv:last-child{border-bottom:none;}
+    .card{grid-template-columns:1fr;padding:18px;}
+    .card .side{align-items:center;width:100%;}
+    .card .rows{grid-template-columns:1fr 1fr;gap:14px 18px;}
+    .prog-label{text-align:center;}
+  }
+  @media(max-width:520px){
+    .bar{height:58px;gap:10px;}
+    .brand{gap:8px;min-width:0;overflow:hidden;}
+    .brand .mark{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .brand .tag{display:none;}
+    .btn{padding:8px 13px;font-size:12px;}
+    .btn.sm{padding:7px 12px;}
+    input[type=text],input[type=number]{font-size:16px;}
+    h1{font-size:30px;}
+    .lede{font-size:15px;}
+    .eyebrow{margin-bottom:16px;}
+    .sec-head{gap:12px;margin-bottom:22px;}
+    .sec-head h2{font-size:23px;}
+    .ledger .v{font-size:22px;}
+    .plans{grid-template-columns:1fr;}
+    .lookup{gap:8px;}
+    .lookup input{min-width:0;}
+    .lookup .btn{flex:1;}
+    .card .rows{grid-template-columns:1fr;}
+    .card .side{align-items:center;}
+    .card .side .btn{width:100%;}
+    .prog{width:100%;}
+    .prog-label{text-align:center;}
+    .actions{gap:10px;}
+    .actions .btn{width:100%;}
+    .status{width:100%;text-align:center;}
+    .preview .pvv{font-size:18px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <span class="mark">Invest<b>·</b>For&nbsp;Customer</span>
+      <span class="tag">On-behalf Desk</span>
+    </div>
+    <div style="display:flex;align-items:center;">
+      <span class="net" id="net"><span class="dot"></span><span id="netTxt">—</span></span>
+      <button class="btn solid" id="connectBtn">Connect wallet</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero fade">
+    <h1>Gift a Legacy Investment <em>to your Valuable Customers.</em></h1>
+    <p class="lede">You fund the deposit in USDT. It's recorded under your <b>customer's</b> address — and only they can claim, in monthly installments, as the token climbs toward the plan's target. You start the position; the returns are theirs alone.</p>
+
+    <div class="ledger">
+      <div class="cell"><div class="k">KAVI price</div><div class="v" id="statPrice">—</div></div>
+      <div class="cell"><div class="k">Total value locked</div><div class="v" id="statLocked">—</div></div>
+      <div class="cell"><div class="k">Investments opened</div><div class="v" id="statCount">—</div></div>
+    </div>
+  </div>
+
+  <!-- DEPOSIT -->
+  <section class="fade">
+    <div class="sec-head">
+      <span class="num">01</span>
+      <div><h2>Invest for a customer</h2><p>Fund it now — your customer claims the returns later.</p></div>
+    </div>
+
+    <div class="deed">
+      <div class="grid2">
+        <div class="field">
+          <label class="f" for="beneficiary">Customer address</label>
+          <input type="text" id="beneficiary" placeholder="0x… — the customer who will claim" spellcheck="false" />
+          <div class="hint">Must be a different address from yours. The position is recorded in their name — only they can claim it.</div>
+        </div>
+        <div class="field">
+          <label class="f" for="amount">Amount in <span id="stableSym">USDT</span></label>
+          <input type="number" id="amount" placeholder="0.00" min="0" step="any" />
+          <div class="hint">Minimum <span id="minDep">1</span> · Your balance: <span id="myBal">—</span></div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:6px;">
+        <label class="f">Choose a plan</label>
+        <div class="plans" id="plans"></div>
+        <div class="hint" id="planHint">Each plan unlocks when the price reaches its multiple of the deposit price; the total payout is half that multiple, released across 10 monthly claims.</div>
+      </div>
+
+      <div class="preview" id="preview">
+        <div class="pv"><div class="pvk">Customer receives</div><div class="pvv" id="pvPayout">—</div></div>
+        <div class="pv"><div class="pvk">Unlocks at price</div><div class="pvv" id="pvUnlock">—</div></div>
+        <div class="pv"><div class="pvk">Each of 10 months</div><div class="pvv" id="pvMonthly">—</div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn solid" id="depositBtn" disabled>Approve &amp; deposit</button>
+        <span class="status" id="depStatus"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLAIMS -->
+  <section class="fade">
+    <div class="sec-head">
+      <span class="num">02</span>
+      <div><h2>Positions &amp; claims</h2><p>Your own are claimable here. Look up any customer address to view theirs.</p></div>
+    </div>
+
+    <div class="lookup">
+      <input type="text" id="lookupAddr" placeholder="0x… customer address to view (blank = your wallet)" spellcheck="false" />
+      <button class="btn ghost" id="lookupBtn">View positions</button>
+      <button class="btn ghost" id="mineBtn">View mine</button>
+    </div>
+
+    <div id="claimContext" class="hint" style="margin-bottom:14px;"></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <div class="foot">
+    <div>Contract <code id="cAddr"></code> · Binance Smart Chain (chainId 56).</div>
+    <div>Read-only until you connect. A position can only be claimed by the customer's own wallet. Verify the contract on BscScan before sending funds — this interface does not custody anything.</div>
+  </div>
+</div>
+
+<script>
+const CONTRACT = "0xaaa088ff8846f9dbaaa7d34ae783d3bd1cc8198a";
+const BSC_HEX = "0x38";
+const BSC_PARAMS = {
+  chainId: BSC_HEX, chainName: "BNB Smart Chain",
+  nativeCurrency:{name:"BNB",symbol:"BNB",decimals:18},
+  rpcUrls:["https://bsc-dataseed.binance.org/"],
+  blockExplorerUrls:["https://bscscan.com/"]
+};
+const READ_RPC = "https://bsc-dataseed.binance.org/";
+
+const ABI = [
+  "function stable() view returns (address)",
+  "function kavi() view returns (address)",
+  "function stableDecimals() view returns (uint8)",
+  "function getKaviPriceUSD() view returns (uint256)",
+  "function planUnlockMultiplier(uint8) pure returns (uint256)",
+  "function MIN_DEPOSIT_USD() view returns (uint256)",
+  "function totalLocked() view returns (uint256)",
+  "function totalDepositsCount() view returns (uint256)",
+  "function getDepositsCount(address) view returns (uint256)",
+  "function getDeposit(address,uint256) view returns (tuple(uint256 lockedTokens,uint256 depositUSD,uint256 targetUSD,uint256 monthlyUSD,uint256 claimedUSD,uint256 lastClaimTime,uint256 unlockPrice,uint256 claimsMade,address depositor,address referrer,bool active))",
+  "function canClaim(address,uint256) view returns (bool)",
+  "function pendingClaimUSD(address,uint256) view returns (uint256)",
+  "function nextClaimTime(address,uint256) view returns (uint256)",
+  "function deposit(address,uint256,uint8) returns (uint256)",
+  "function claim(uint256)"
+];
+const ERC20 = [
+  "function approve(address,uint256) returns (bool)",
+  "function allowance(address,address) view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)"
+];
+const PLAN_COUNT = 9;
+const CLAIM_TOTAL = 10;
+
+let provider, signer, account, read, chainOk=false;
+let stableAddr, stableDec=18, stableSym="USDT", kaviAddr, selectedPlan=null, currentPrice=null, minDepUSD=null;
+const $ = id => document.getElementById(id);
+
+function short(a){return a? a.slice(0,6)+"…"+a.slice(-4):"";}
+function fmtUsd(bn){ // 1e18 scaled
+  try{const n=parseFloat(ethers.utils.formatUnits(bn,18));return "$"+n.toLocaleString(undefined,{maximumFractionDigits:n<1?4:2});}catch{return "—";}
+}
+function fmtNum(bn,dec,mx){try{const n=parseFloat(ethers.utils.formatUnits(bn,dec));return n.toLocaleString(undefined,{maximumFractionDigits:mx??2});}catch{return "—";}}
+
+function readProvider(){
+  if(!read){ try{ read = new ethers.providers.JsonRpcProvider(READ_RPC); }catch(e){ read=null; } }
+  return read;
+}
+function contract(withSigner){
+  const p = withSigner && signer ? signer : (provider || readProvider());
+  return new ethers.Contract(CONTRACT, ABI, p);
+}
+
+/* ---------- Plans ---------- */
+function planMult(id){const m=[4,10,20,50,100,200,500,1000,2000];return m[id];}
+function usd(n){return "$"+Number(n).toLocaleString(undefined,{maximumFractionDigits: n>0&&n<1?6:2});}
+function updatePreview(){
+  const amt=parseFloat($("amount").value.trim());
+  const P=$("pvPayout"), U=$("pvUnlock"), M=$("pvMonthly");
+  if(selectedPlan===null || !amt || amt<=0){
+    P.textContent="—"; M.textContent="—"; U.textContent="—";
+    P.className=U.className=M.className="pvv"; return;
+  }
+  const mult=planMult(selectedPlan);
+  const payout=amt*(mult/2);
+  P.className=M.className="pvv";
+  P.textContent=usd(payout);
+  M.textContent=usd(payout/10);
+  if(currentPrice){
+    const priceF=parseFloat(ethers.utils.formatUnits(currentPrice,18));
+    U.className="pvv"; U.textContent=usd(priceF*mult);
+  }else{
+    U.className="pvv dim"; U.textContent="connect for price";
+  }
+}
+
+function buildPlans(){
+  const el=$("plans"); el.innerHTML="";
+  const i=8, m=2000; // Plan 09 — 2000x unlock, 1000x payout
+  const b=document.createElement("button");
+  b.className="plan on"; b.dataset.id=i;
+  b.innerHTML=`<div class="sub">${m/2}×</div>`;
+  b.onclick=()=>{selectedPlan=i;b.classList.add("on");refreshDepositBtn();updatePreview();};
+  el.appendChild(b);
+  selectedPlan=i;
+  refreshDepositBtn();
+  updatePreview();
+}
+
+/* ---------- Stats ---------- */
+async function loadStats(){
+  const c=contract(false); if(!c) return;
+  try{
+    const [price,locked,count]=await Promise.all([
+      c.getKaviPriceUSD().catch(()=>null),
+      c.totalLocked().catch(()=>null),
+      c.totalDepositsCount().catch(()=>null)
+    ]);
+    if(price){ currentPrice=price; $("statPrice").innerHTML = fmtUsd(price); updatePreview(); }
+    if(locked!=null) $("statLocked").innerHTML = fmtNum(locked, 18, 0)+' <small>KAVI</small>';
+    if(count!=null) $("statCount").textContent = count.toString();
+  }catch(e){ /* leave dashes */ }
+}
+
+/* ---------- Token meta ---------- */
+async function loadTokenMeta(){
+  const c=contract(false);
+  try{
+    stableAddr = await c.stable();
+    kaviAddr   = await c.kavi();
+    const t = new ethers.Contract(stableAddr, ERC20, provider||readProvider());
+    stableDec = await t.decimals();
+    try{ stableSym = await t.symbol(); }catch{ stableSym="USDT"; }
+    $("stableSym").textContent = stableSym;
+    try{ minDepUSD = await c.MIN_DEPOSIT_USD(); $("minDep").textContent = fmtUsd(minDepUSD); }catch{}
+  }catch(e){ console.warn("meta", e); }
+}
+async function loadBalance(){
+  if(!account||!stableAddr) return;
+  try{
+    const t=new ethers.Contract(stableAddr, ERC20, provider);
+    const b=await t.balanceOf(account);
+    $("myBal").textContent = fmtNum(b, stableDec, 2)+" "+stableSym;
+  }catch{}
+}
+
+/* ---------- Connect ---------- */
+async function connect(){
+  if(!window.ethereum){
+    setDep("No wallet detected. Open this page in a browser with MetaMask.","err");
+    return;
+  }
+  try{
+    provider = new ethers.providers.Web3Provider(window.ethereum,"any");
+    await provider.send("eth_requestAccounts",[]);
+    signer = provider.getSigner();
+    account = await signer.getAddress();
+    await ensureChain();
+    $("connectBtn").textContent = short(account);
+    await loadTokenMeta();
+    await loadBalance();
+    await loadStats();
+    refreshDepositBtn();
+    loadDeposits(account, true);
+    window.ethereum.removeAllListeners?.();
+    window.ethereum.on?.("accountsChanged",()=>location.reload());
+    window.ethereum.on?.("chainChanged",()=>location.reload());
+  }catch(e){ setDep(errMsg(e),"err"); }
+}
+async function ensureChain(){
+  const netEl=$("net"), txt=$("netTxt"); netEl.style.display="flex";
+  try{
+    const n=await provider.getNetwork();
+    if(n.chainId!==56){
+      chainOk=false; netEl.className="net bad"; txt.textContent="Wrong network";
+      try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:BSC_HEX}]}); }
+      catch(sw){ if(sw.code===4902){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[BSC_PARAMS]}); } }
+      const n2=await provider.getNetwork(); chainOk=n2.chainId===56;
+    } else chainOk=true;
+    if(chainOk){ netEl.className="net ok"; txt.textContent="BNB Chain"; }
+  }catch(e){ chainOk=false; netEl.className="net bad"; txt.textContent="Network error"; }
+}
+
+/* ---------- Deposit ---------- */
+function refreshDepositBtn(){
+  const b=$("depositBtn");
+  b.disabled = !(account && chainOk && selectedPlan!==null);
+}
+function setDep(msg,cls){const s=$("depStatus");s.textContent=msg;s.className="status"+(cls?" "+cls:"");}
+
+async function doDeposit(){
+  if(!account){ return connect(); }
+  if(!chainOk){ return ensureChain(); }
+  const bene=$("beneficiary").value.trim();
+  const amtStr=$("amount").value.trim();
+  if(!ethers.utils.isAddress(bene)){ return setDep("Enter a valid customer address.","err"); }
+  if(bene.toLowerCase()===account.toLowerCase()){ return setDep("Customer address must differ from yours.","err"); }
+  if(!amtStr||Number(amtStr)<=0){ return setDep("Enter an amount.","err"); }
+
+  let amount;
+  try{ amount=ethers.utils.parseUnits(amtStr, stableDec); }
+  catch{ return setDep("Invalid amount.","err"); }
+
+  if(minDepUSD){
+    const amtUSD = amount.mul(ethers.BigNumber.from(10).pow(18)).div(ethers.BigNumber.from(10).pow(stableDec));
+    if(amtUSD.lt(minDepUSD)){ return setDep("Below minimum of "+fmtUsd(minDepUSD)+".","err"); }
+  }
+
+  const btn=$("depositBtn"); btn.disabled=true;
+  try{
+    const token=new ethers.Contract(stableAddr, ERC20, signer);
+    const allow=await token.allowance(account, CONTRACT);
+    if(allow.lt(amount)){
+      setDep("Approve "+stableSym+" — confirm in wallet…");
+      const ap=await token.approve(CONTRACT, amount);
+      setDep("Approving… waiting for confirmation");
+      await ap.wait();
+    }
+    setDep("Deposit — confirm in wallet…");
+    const c=contract(true);
+    const tx=await c.deposit(bene, amount, selectedPlan);
+    setDep("Depositing… tx "+short(tx.hash));
+    await tx.wait();
+    setDep("Done. Position opened for customer "+short(bene)+".","ok");
+    $("amount").value="";
+    loadBalance(); loadStats();
+    loadDeposits(bene, false);
+    $("lookupAddr").value=bene;
+    $("claimContext").textContent="Showing positions for "+short(bene)+" (the customer you just funded).";
+  }catch(e){ setDep(errMsg(e),"err"); }
+  finally{ btn.disabled=false; refreshDepositBtn(); }
+}
+
+/* ---------- Deposits view ---------- */
+async function loadDeposits(addr, isSelf){
+  const wrap=$("cards"); const ctx=$("claimContext");
+  const target=(addr||"").trim();
+  if(!ethers.utils.isAddress(target)){ wrap.innerHTML=`<div class="empty">Enter a valid address to view its positions.</div>`; return; }
+  ctx.textContent = isSelf ? "Showing your positions — you can claim any that are live."
+                           : "Showing positions for "+short(target)+" (read-only unless it's your wallet).";
+  wrap.innerHTML=`<div class="empty">Loading…</div>`;
+  const c=contract(false);
+  try{
+    const n=(await c.getDepositsCount(target)).toNumber();
+    if(n===0){ wrap.innerHTML=`<div class="empty">No positions recorded for this address yet.</div>`; return; }
+    wrap.innerHTML="";
+    const self = account && target.toLowerCase()===account.toLowerCase();
+    for(let i=0;i<n;i++){
+      const info=await c.getDeposit(target,i);
+      let canC=false, pend=null, next=null;
+      try{ canC=await c.canClaim(target,i); }catch{}
+      try{ pend=await c.pendingClaimUSD(target,i); }catch{}
+      try{ next=await c.nextClaimTime(target,i); }catch{}
+      wrap.appendChild(renderCard(target,i,info,{canC,pend,next,self}));
+    }
+  }catch(e){ wrap.innerHTML=`<div class="empty">Couldn't load: ${errMsg(e)}</div>`; }
+}
+
+function renderCard(owner,id,d,st){
+  const el=document.createElement("div"); el.className="card";
+  const claimsMade = d.claimsMade.toNumber();
+  const pct = Math.min(100, Math.round(claimsMade/CLAIM_TOTAL*100));
+  const active=d.active;
+  let pill, pillClass;
+  if(!active){ pill="Completed"; pillClass="done"; }
+  else if(st.canC){ pill="Claim available"; pillClass="live"; }
+  else{ pill="Locked"; pillClass="wait"; }
+
+  const nextTs = st.next? st.next.toNumber():0;
+  const nextTxt = (!active) ? "—" : (nextTs===0 ? "Ready once price unlocks"
+                    : new Date(nextTs*1000).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}));
+
+  el.innerHTML=`
+    <div class="rows">
+      <div class="row"><div class="rk">Deposited</div><div class="rv">${fmtUsd(d.depositUSD)}</div></div>
+      <div class="row"><div class="rk">Target payout</div><div class="rv">${fmtUsd(d.targetUSD)}</div></div>
+      <div class="row"><div class="rk">Claimed so far</div><div class="rv">${fmtUsd(d.claimedUSD)}</div></div>
+      <div class="row"><div class="rk">Per-month</div><div class="rv">${fmtUsd(d.monthlyUSD)}</div></div>
+      <div class="row"><div class="rk">Unlock price</div><div class="rv">${fmtUsd(d.unlockPrice)}</div></div>
+      <div class="row"><div class="rk">Next claim</div><div class="rv">${nextTxt}</div></div>
+      <div class="row"><div class="rk">Funded by</div><div class="rv" title="${d.depositor}">${short(d.depositor)}</div></div>
+      <div class="row"><div class="rk">Locked KAVI</div><div class="rv">${fmtNum(d.lockedTokens,18,2)}</div></div>
+    </div>
+    <div class="side">
+      <span class="pill ${pillClass}">${pill}</span>
+      <div class="prog"><i style="width:${pct}%"></i></div>
+      <div class="prog-label">${claimsMade} / ${CLAIM_TOTAL} claims</div>
+      ${ active ? (st.self
+          ? `<button class="btn sm ${st.canC?'solid':''}" data-claim="${id}" ${st.canC?'':'disabled'}>Claim now</button>`
+          : `<span class="prog-label">Only ${short(owner)} can claim</span>`)
+        : `` }
+      <div class="claimMsg status" style="font-size:11px"></div>
+    </div>`;
+  const btn=el.querySelector("[data-claim]");
+  if(btn){ btn.onclick=()=>doClaim(id, el.querySelector(".claimMsg")); }
+  return el;
+}
+
+async function doClaim(id, msgEl){
+  if(!account){ return connect(); }
+  if(!chainOk){ return ensureChain(); }
+  const set=(m,c)=>{ if(msgEl){msgEl.textContent=m;msgEl.className="claimMsg status"+(c?" "+c:"");} };
+  try{
+    set("Confirm in wallet…");
+    const c=contract(true);
+    const tx=await c.claim(id);
+    set("Claiming… "+short(tx.hash));
+    await tx.wait();
+    set("Claimed.","ok");
+    loadStats();
+    loadDeposits(account, true);
+  }catch(e){ set(errMsg(e),"err"); }
+}
+
+/* ---------- errors ---------- */
+function errMsg(e){
+  const r=e?.reason || e?.data?.message || e?.error?.message || e?.message || "Transaction failed";
+  if(/user rejected|denied/i.test(r)) return "Cancelled in wallet.";
+  return r.length>90? r.slice(0,90)+"…" : r;
+}
+
+/* ---------- init ---------- */
+function init(){
+  $("cAddr").textContent = CONTRACT;
+  buildPlans();
+  readProvider();
+  loadStats();
+  loadTokenMeta();
+  $("connectBtn").onclick=connect;
+  $("depositBtn").onclick=doDeposit;
+  $("lookupBtn").onclick=()=>{ const a=$("lookupAddr").value.trim()||account; loadDeposits(a, a&&account&&a.toLowerCase()===account.toLowerCase()); };
+  $("mineBtn").onclick=()=>{ if(!account) return connect(); $("lookupAddr").value=account; loadDeposits(account,true); };
+  ["beneficiary","amount"].forEach(k=>$(k).addEventListener("input",()=>{refreshDepositBtn();updatePreview();}));
+  $("cards").innerHTML=`<div class="empty">Connect your wallet, or look up any address to view its positions.</div>`;
+  if(window.ethereum && window.ethereum.selectedAddress){ connect(); }
+}
+init();
+</script>
+</body>
+</html>
